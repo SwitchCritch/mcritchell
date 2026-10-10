@@ -1,0 +1,39 @@
+{% from '_icons.html' import icon %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#182b35"><meta name="robots" content="noindex,nofollow">
+  <title>Welcome back · {{site_title}}</title>
+  <link rel="icon" type="image/svg+xml" href="{{url_for('static',filename='favicon.svg')}}">
+  <link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
+  <script src="{{url_for('static',filename='app.js')}}" defer></script>
+</head>
+<body class="login-body">
+  <main class="login-container">
+    <section class="login-art" aria-label="Your personal journal">
+      <div class="login-art-top"><span class="mini-star">{{icon('spark',27)}}</span><span>THE PERSONAL ARCHIVE</span></div>
+      <div class="art-circles"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-sun">✳</div><div class="art-moon"></div><span class="art-small-star star-one">✳</span><span class="art-small-star star-two">✳</span></div>
+      <div class="login-art-content"><span class="eyebrow light">LITTLE MOMENTS, BIG MEMORIES</span><h1>A life worth<br><em>remembering.</em></h1><p>Your stories, adventures, concerts and everyday moments — all together, in one beautiful place.</p></div>
+      <div class="art-footer"><span>✦ &nbsp; KEEP THE GOOD DAYS CLOSE</span><span>EST. 2026</span></div>
+    </section>
+    <section class="login-panel">
+      <div class="login-panel-content">
+        <div class="login-mobile-brand">{{icon('spark',22)}} {{site_title}}</div>
+        <div class="lock-badge">{{icon('lock',21)}}</div>
+        <p class="eyebrow dark">YOUR SPACE, YOUR STORIES</p>
+        <h2>Welcome back.</h2>
+        <p class="login-subtitle">Enter your password to unlock your private journal.</p>
+        {% for category, message in get_flashed_messages(with_categories=true) %}<div class="flash {{category}}" role="alert">{{message}}</div>{% endfor %}
+        <form method="post" action="{{request.full_path if request.query_string else url_for('login')}}" class="login-form">
+          <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+          <label for="password">Your password</label>
+          <div class="password-wrap"><input id="password" name="password" type="password" required autofocus autocomplete="current-password" placeholder="Enter your password"><button class="show-password" type="button" data-password-toggle aria-label="Show password">Show</button></div>
+          <button type="submit" class="btn btn-dark login-submit">Unlock my journal {{icon('arrow',18)}}</button>
+        </form>
+        <p class="security-blurb">{{icon('shield',17)}} Your memories are protected and only accessible after signing in.</p>
+      </div>
+      <div class="login-copyright">A quiet corner of the internet, just for you.</div>
+    </section>
+  </main>
+</body></html>

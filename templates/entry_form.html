@@ -1,0 +1,25 @@
+{% extends 'base.html' %}{% from '_icons.html' import icon %}
+{% block title %}{{'Edit memory' if is_edit else 'New memory'}}{% endblock %}{% block crumb %}{{'Edit memory' if is_edit else 'Write a memory'}}{% endblock %}
+{% block content %}
+<div class="back-row"><a href="{{url_for('entry_detail',entry_id=entry_id) if is_edit else url_for('dashboard')}}">{{icon('left',18)}} {{'Back to memory' if is_edit else 'Back to overview'}}</a></div>
+<div class="page-heading form-page-heading"><div><p class="eyebrow dark">{{'TIDY UP THE DETAILS' if is_edit else 'PRESERVE A LITTLE PIECE OF LIFE'}}</p><h1>{{'Edit your' if is_edit else 'Write a new'}} <em>memory.</em></h1><p class="heading-description">What happened? Where did you go? How did it feel? It's all worth remembering.</p></div></div>
+<form method="post" enctype="multipart/form-data" action="{{url_for('edit_entry',entry_id=entry_id) if is_edit else url_for('new_entry')}}" id="entry-form" class="editor-layout">
+  <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+  <div class="editor-main">
+    <section class="editor-card"><div class="editor-card-top"><span class="editor-step">01</span><div><h2>The story</h2><p>Start with the important bits.</p></div></div>
+      <div class="field"><label for="title">Give this memory a title <span>*</span></label><input id="title" name="title" type="text" placeholder="e.g. An unforgettable night at Wembley" value="{{entry.title|default('',true)}}" maxlength="140" required></div>
+      <div class="field-row"><div class="field"><label for="entry_date">When did it happen? <span>*</span></label><input id="entry_date" name="entry_date" type="date" value="{{entry.entry_date|default(today,true)}}" required></div><div class="field"><label for="category">What kind of memory?</label><select id="category" name="category">{% for key, name in categories.items() %}<option value="{{key}}" {% if entry.category|default('diary',true) == key %}selected{% endif %}>{{name[0]}}</option>{% endfor %}</select></div></div>
+      <div class="field-row"><div class="field"><label for="location">Where were you? <span class="optional">optional</span></label><input id="location" name="location" type="text" value="{{entry.location|default('',true)}}" placeholder="e.g. Eventim Apollo, London" maxlength="180"></div><div class="field"><label for="mood">How did it feel? <span class="optional">optional</span></label><input id="mood" name="mood" type="text" value="{{entry.mood|default('',true)}}" placeholder="e.g. Excited, happy, nostalgic..." maxlength="60"></div></div>
+      <div class="field"><label for="body">Tell the story</label><textarea id="body" name="body" rows="12" maxlength="40000" placeholder="Today was one of those days I'll never forget...\n\nWhat did you do? Who was there? What made it special?">{{entry.body|default('',true)}}</textarea><p class="field-hint">Take your time. Your story can be as long or short as you like.</p></div>
+    </section>
+    <section class="editor-card"><div class="editor-card-top"><span class="editor-step">02</span><div><h2>Make it picture perfect</h2><p>Add photographs to bring this memory to life.</p></div></div>
+      <label for="photos" class="upload-zone" id="upload-zone">{{icon('upload',32)}}<strong>Choose photos or drop them here</strong><span>JPG, PNG, WEBP or GIF · Max 12 MB each · Up to 12 at a time</span><span class="upload-choose">Browse photos {{icon('arrow',16)}}</span><input id="photos" type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
+      <div class="upload-previews" id="upload-previews" aria-live="polite"></div>
+      {% if is_edit and existing_photos %}<div class="existing-heading">Already in this entry <span>({{existing_photos|length}})</span></div><div class="existing-photos">{% for photo in existing_photos %}<div class="existing-photo"><img src="{{url_for('serve_photo',photo_id=photo.id,thumb=1)}}" alt="Saved photo" loading="lazy"><button type="submit" form="delete-photo-{{photo.id}}" class="photo-remove" aria-label="Remove this photo" data-confirm="Remove this photo permanently?">{{icon('close',15)}}</button></div>{% endfor %}</div>{% endif %}
+    </section>
+    <div class="editor-submit"><a href="{{url_for('entry_detail',entry_id=entry_id) if is_edit else url_for('dashboard')}}" class="btn btn-quiet">Cancel</a><button class="btn btn-dark save-button" type="submit">{{icon('check',18)}} {{'Save changes' if is_edit else 'Save this memory'}}</button></div>
+  </div>
+  <aside class="editor-aside"><div class="aside-tip"><div class="aside-tip-icon">✳</div><h3>A little reminder</h3><p>The best memories aren't always the biggest events. Sometimes they're the simplest days with the people you love.</p><div class="tip-divider"></div><p class="aside-private">{{icon('lock',16)}} Only you can see what you write here.</p></div></aside>
+</form>
+{% if is_edit %}{% for photo in existing_photos %}<form id="delete-photo-{{photo.id}}" method="post" action="{{url_for('delete_photo',photo_id=photo.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"></form>{% endfor %}{% endif %}
+{% endblock %}

@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block title %}Something went wrong{% endblock %}{% block content %}<div class="empty-dashboard error-state"><p class="eyebrow dark">A LITTLE DETOUR</p><h1>{{code}}</h1><h2>{{message}}</h2><a class="btn btn-dark" href="{{url_for('dashboard')}}">Back to your journal</a></div>{% endblock %}

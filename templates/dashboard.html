@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% from '_icons.html' import icon %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<section class="welcome-header"><div><p class="eyebrow dark"><span class="sun-icon">✳</span> YOUR STORY, STILL UNFOLDING</p><h1>Your life in <em>moments.</em></h1><p class="heading-description">Everyday stories, unforgettable nights, and everything in between. This is your place to keep them all.</p></div><a class="btn btn-dark desktop-cta" href="{{url_for('new_entry')}}">{{icon('plus',19)}} Write something new</a></section>
+<div class="stats-row">
+  <div class="stat-card"><span class="stat-icon sage">{{icon('book',22)}}</span><div><strong>{{total}}</strong><span>Memories saved</span></div></div>
+  <div class="stat-card"><span class="stat-icon peach">{{icon('music',22)}}</span><div><strong>{{concerts}}</strong><span>Concert nights</span></div></div>
+  <div class="stat-card"><span class="stat-icon blue">{{icon('camera',22)}}</span><div><strong>{{photos}}</strong><span>Photos kept</span></div></div>
+  <div class="stat-card"><span class="stat-icon lavender">{{icon('calendar',22)}}</span><div><strong>{{years}}</strong><span>Years of stories</span></div></div>
+</div>
+{% if recent %}
+<section class="section-header"><div><p class="eyebrow dark">TAKE A LITTLE TRIP BACK</p><h2>Recently remembered <span class="section-deco">✳</span></h2></div><a class="text-link" href="{{url_for('entries')}}">View all memories {{icon('arrow',18)}}</a></section>
+<div class="entries-grid dashboard-grid">
+  {% for entry in recent %}
+  <a class="memory-card {% if loop.first %}featured-card{% endif %}" href="{{url_for('entry_detail',entry_id=entry.id)}}">
+    <div class="card-image {% if not entry.cover %}image-empty category-{{entry.category}}{% endif %}">
+      {% if entry.cover %}<img src="{{url_for('serve_photo',photo_id=entry.cover.id,thumb=1)}}" alt="Photograph from {{entry.title}}" loading="lazy">{% else %}<span class="empty-symbol">{% if entry.category == 'concert' %}♫{% elif entry.category == 'trip' %}✈{% elif entry.category == 'family' %}♡{% else %}✳{% endif %}</span>{% endif %}
+      <span class="category-pill">{{categories[entry.category][0]}}</span>
+      {% if entry.photos|length > 1 %}<span class="photo-pill">{{icon('camera',14)}} {{entry.photos|length}}</span>{% endif %}
+    </div>
+    <div class="card-content"><span class="card-date">{{entry.entry_date | pretty_date}}</span><h3>{{entry.title}}</h3><p>{{entry.body or 'A memory to keep forever.'}}</p><span class="card-bottom">{% if entry.location %}<span>{{icon('pin',15)}} {{entry.location}}</span>{% else %}<span>From your journal</span>{% endif %}<span class="card-arrow">{{icon('arrow',18)}}</span></span></div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-dashboard"><span class="empty-dash-icon">{{icon('book',36)}}</span><h2>A beautiful story starts here.</h2><p>Your journal is ready. Write about today, remember an amazing concert, or add photos from a day you never want to forget.</p><a class="btn btn-dark" href="{{url_for('new_entry')}}">{{icon('plus',18)}} Create your first entry</a></div>
+{% endif %}
+<section class="memory-banner"><div class="banner-decoration">✳</div><div><p class="eyebrow light">SOME THINGS ARE WORTH KEEPING</p><h2>The best stories are yours.</h2><p>Remember where you went, who you were with, and how it felt.</p></div><a href="{{url_for('new_entry')}}" class="btn btn-light">Add another memory {{icon('arrow',18)}}</a></section>
+{% endblock %}

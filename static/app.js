@@ -2,14 +2,19 @@
 // All interactions stay in the browser; entries and files are saved by the private server.
 const $ = (selector, root=document) => root.querySelector(selector);
 const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
-const sidebar = $('#sidebar');
-$('[data-toggle-sidebar]')?.addEventListener('click', () => {
-  sidebar?.classList.toggle('open');
-  $('[data-close-sidebar]')?.classList.toggle('visible');
+const menuToggle = $('[data-toggle-sidebar]');
+const mobileNav = $('#mobile-nav');
+menuToggle?.addEventListener('click', () => {
+  if (!mobileNav) return;
+  mobileNav.hidden = !mobileNav.hidden;
+  menuToggle.setAttribute('aria-expanded', String(!mobileNav.hidden));
 });
-$('[data-close-sidebar]')?.addEventListener('click', () => {
-  sidebar?.classList.remove('open');
-  $('[data-close-sidebar]')?.classList.remove('visible');
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && mobileNav && !mobileNav.hidden) {
+    mobileNav.hidden = true;
+    menuToggle?.setAttribute('aria-expanded', 'false');
+    menuToggle?.focus();
+  }
 });
 $('[data-password-toggle]')?.addEventListener('click', (e) => {
   const field = $('#password');

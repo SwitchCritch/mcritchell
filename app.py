@@ -258,8 +258,11 @@ def dashboard():
     concerts = db.execute("SELECT COUNT(*) AS n FROM entries WHERE category='concert'").fetchone()["n"]
     photos = db.execute("SELECT COUNT(*) AS n FROM photos").fetchone()["n"]
     years = db.execute("SELECT COUNT(DISTINCT substr(entry_date,1,4)) AS n FROM entries").fetchone()["n"]
+    available_years = [row[0] for row in db.execute(
+        "SELECT DISTINCT substr(entry_date, 1, 4) AS year FROM entries ORDER BY year DESC"
+    ).fetchall()]
     return render_template("dashboard.html", recent=recent, total=total, concerts=concerts,
-                           photos=photos, years=years)
+                           photos=photos, years=years, available_years=available_years)
 
 
 @app.get("/entries")
@@ -299,6 +302,18 @@ def entries():
 @login_required
 def concerts():
     return redirect(url_for("entries", category="concert"))
+
+
+@app.get("/gallery")
+@login_required
+def gallery():
+    photo_rows = get_db().execute("""
+        SELECT p.id, p.entry_id, e.title, e.entry_date, e.category
+        FROM photos AS p JOIN entries AS e ON e.id = p.entry_id
+        ORDER BY e.entry_date DESC, p.id DESC LIMIT 300
+    """).fetchall()
+    return render_template("gallery.html", photo_rows=photo_rows)
+
 
 
 def validate_entry(form):
@@ -409,7 +424,10 @@ def new_entry():
         except ValueError as exc:
             flash(str(exc), "error")
         return render_template("entry_form.html", entry=request.form, is_edit=False, existing_photos=[])
-    return render_template("entry_form.html", entry={"entry_date":local_today(), "category":"diary"},
+    category = request.args.get("category", "diary")
+    if category not in CATEGORIES:
+        category = "diary"
+    return render_template("entry_form.html", entry={"entry_date":local_today(), "category":category},
                            is_edit=False, existing_photos=[])
 
 

@@ -4,48 +4,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f8f7f3">
-  <meta name="description" content="A private place to keep life's favourite memories.">
-  <title>{% block title %}My memories{% endblock %} · {{ site_title }}</title>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  <meta name="theme-color" content="#09131b">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="A private place to collect meaningful days, journeys and live music.">
+  <title>{% block title %}Home{% endblock %} · {{site_title}}</title>
+  <link rel="icon" type="image/svg+xml" href="{{url_for('static',filename='favicon.svg')}}">
+  <link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
+  <script defer src="{{url_for('static',filename='app.js')}}"></script>
 </head>
 <body class="app-body">
-  <div class="app-shell">
-    <div class="sidebar-overlay" data-close-sidebar></div>
-    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
-      <a class="brand" href="{{ url_for('dashboard') }}">
-        <span class="brand-symbol">{{ icon('spark', 25) }}</span>
-        <span class="brand-copy"><span class="brand-caption">THE PERSONAL ARCHIVE</span><strong>{{ site_title }}</strong></span>
-      </a>
-      <div class="sidebar-label">YOUR SPACE</div>
-      <nav class="nav-group">
-        <a href="{{url_for('dashboard')}}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">{{icon('home')}}<span>Overview</span></a>
-        <a href="{{url_for('entries')}}" class="nav-link {% if request.endpoint in ['entries','entry_detail','edit_entry'] and request.args.get('category') != 'concert' %}active{% endif %}">{{icon('book')}}<span>All memories</span></a>
-        <a href="{{url_for('concerts')}}" class="nav-link {% if request.endpoint == 'concerts' or (request.endpoint == 'entries' and request.args.get('category') == 'concert') %}active{% endif %}">{{icon('music')}}<span>Concert diary</span></a>
-        <a href="{{url_for('new_entry')}}" class="nav-link {% if request.endpoint == 'new_entry' %}active{% endif %}">{{icon('plus')}}<span>Write a memory</span></a>
-      </nav>
-      <div class="sidebar-bottom">
-        <div class="private-note">{{icon('lock', 16)}}<span>Just for you. Always private.</span></div>
-        <form method="post" action="{{url_for('logout')}}">
-          <input type="hidden" name="_csrf" value="{{csrf_token()}}">
-          <button class="signout" type="submit">{{icon('logout',18)}} Sign out</button>
-        </form>
-      </div>
-    </aside>
-    <div class="main-shell">
-      <header class="topbar">
-        <button class="mobile-menu icon-button" data-toggle-sidebar type="button" aria-label="Open menu">{{icon('menu', 23)}}</button>
-        <div class="topbar-breadcrumb">YOUR PRIVATE JOURNAL <span class="sep">/</span> <strong>{% block crumb %}Overview{% endblock %}</strong></div>
-        <div class="topbar-right"><span class="today-date">{{ today | pretty_date }}</span><a class="topbar-add" href="{{url_for('new_entry')}}">{{icon('plus',18)}}<span>New entry</span></a></div>
-      </header>
-      <main class="main-content">
-        {% for category, message in get_flashed_messages(with_categories=true) %}<div class="flash {{category}}" role="alert">{{icon('check',18)}} {{ message }}</div>{% endfor %}
-        {% block content %}{% endblock %}
-      </main>
-      <footer class="site-footer">A collection of days worth remembering <span>✳</span> Made to last.</footer>
+<div class="site-shell">
+  <header class="masthead">
+    <a class="masthead-brand" href="{{url_for('dashboard')}}" aria-label="{{site_title}} homepage">
+      <span class="brand-mark" aria-hidden="true">✧</span>
+      <span class="brand-words"><span class="brand-title">{{site_title}}</span><span class="brand-tagline">YOUR DAYS <i>•</i> YOUR STORIES <i>•</i> YOUR MEMORIES</span></span>
+    </a>
+    <nav class="desktop-nav" aria-label="Journal navigation">
+      <a {% if request.endpoint == 'dashboard' %}class="active"{% endif %} href="{{url_for('dashboard')}}">Home</a>
+      <a {% if request.endpoint in ['entries','entry_detail','edit_entry'] and request.args.get('category') != 'concert' %}class="active"{% endif %} href="{{url_for('entries')}}">Journal</a>
+      <a {% if request.endpoint == 'concerts' or request.args.get('category') == 'concert' %}class="active"{% endif %} href="{{url_for('concerts')}}">Concerts</a>
+      <a {% if request.endpoint == 'gallery' %}class="active"{% endif %} href="{{url_for('gallery')}}">Photos</a>
+      <a href="{{url_for('dashboard')}}#journal-archive">Archive</a>
+    </nav>
+    <div class="masthead-actions">
+      <a class="header-search" href="{{url_for('entries')}}" aria-label="Search journal">{{icon('search',20)}}</a>
+      <a href="{{url_for('new_entry')}}" class="btn btn-gold header-create">{{icon('edit',16)}} <span>New entry</span></a>
+      <form action="{{url_for('logout')}}" method="post" class="logout-form"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="header-logout" type="submit" title="Sign out">{{icon('logout',18)}}<span>Sign out</span></button></form>
+      <button type="button" class="mobile-menu icon-button" data-toggle-sidebar aria-controls="mobile-nav" aria-expanded="false" aria-label="Open navigation">{{icon('menu',24)}}</button>
     </div>
+  </header>
+  <div class="mobile-nav" id="mobile-nav" hidden>
+    <nav aria-label="Mobile navigation">
+      <a href="{{url_for('dashboard')}}">Home</a><a href="{{url_for('entries')}}">Journal</a><a href="{{url_for('concerts')}}">Concerts</a><a href="{{url_for('gallery')}}">Photos</a><a href="{{url_for('dashboard')}}#journal-archive">Archive</a><a href="{{url_for('new_entry')}}">Write a memory</a>
+    </nav>
   </div>
+  <main id="main-content" class="main-content">
+    {% for category,message in get_flashed_messages(with_categories=true) %}<div class="flash {{category}}" role="alert">{{icon('check',18)}} {{message}}</div>{% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer"><span>✧ &nbsp; {{site_title}}</span><span>{{icon('lock',13)}} A private place to keep the days that matter.</span></footer>
+</div>
 </body>
 </html>

@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% from '_icons.html' import icon %}
+{% block title %}Your photos{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">THE MOMENTS IN PICTURES</p><h1>Your photo <em>gallery.</em></h1><p class="heading-description">All the photographs you've saved with your diary entries, safely kept together.</p></div><a href="{{url_for('new_entry')}}" class="btn btn-gold">{{icon('plus',17)}} Add a memory</a></div>
+{% if photo_rows %}
+<div class="gallery-list">{% for photo in photo_rows %}<a class="gallery-tile" href="{{url_for('entry_detail',entry_id=photo.entry_id)}}" aria-label="Open {{photo.title}}"><img loading="lazy" src="{{url_for('serve_photo',photo_id=photo.id,thumb=1)}}" alt="Photograph from {{photo.title}}"><div class="gallery-tile-caption"><strong>{{photo.title}}</strong><span>{{photo.entry_date|pretty_date}}</span></div></a>{% endfor %}</div>
+{% else %}<div class="empty-stories compact"><div class="empty-medallion">{{icon('camera',28)}}</div><h3>Your gallery is waiting.</h3><p>Add pictures to any journal entry and they'll appear here automatically.</p><a class="btn btn-gold" href="{{url_for('new_entry')}}">{{icon('plus',17)}} Add your first photos</a></div>{% endif %}
+{% endblock %}

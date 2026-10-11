@@ -47,6 +47,7 @@ class JournalTests(unittest.TestCase):
         self.assertEqual(self.client.get("/").status_code, 302)
         self.assertIn("/login", self.client.get("/entries").location)
         self.assertIn("/login", self.client.get("/photos/123").location)
+        self.assertIn("/login", self.client.get("/gallery").location)
         self.assertEqual(self.client.get("/login").status_code, 200)
 
     def test_login_and_csrf(self):
@@ -77,6 +78,8 @@ class JournalTests(unittest.TestCase):
         self.assertEqual(self.client.get(f"/photos/{photo_id}").status_code, 200)
         self.assertEqual(self.client.get(f"/photos/{photo_id}?thumb=1").mimetype, "image/webp")
         self.assertIn(b"A memorable concert", self.client.get(detail_url).data)
+        self.assertIn(b"A memorable concert", self.client.get("/").data)
+        self.assertIn(b"A memorable concert", self.client.get("/gallery").data)
         self.assertIn(b"A memorable concert", self.client.get("/entries?q=memorable").data)
         self.assertIn(b"A memorable concert", self.client.get("/entries?category=concert").data)
         entry_id = int(detail_url.rstrip("/").split("/")[-1])

@@ -1,4 +1,4 @@
-# The Critchell Journal
+# The Critchell Journal — Midnight & Gold Edition
 
 A **private, password-protected diary** for everyday memories, concerts, family events and trips. Add as many entries as you like, upload photos, edit/delete entries and photos, and search your memories by text, year and category.
 
@@ -7,10 +7,34 @@ A **private, password-protected diary** for everyday memories, concerts, family 
 - First screen is the password login. There is **no public sign-up** and no publicly readable journal page.
 - Dates, titles, categories (Concert / Everyday / Family / Travel / Milestone / Other), locations, moods and rich-length diary text.
 - Up to **12 photos per upload** and **60 photos per entry**; JPG, PNG, WEBP and GIF (GIFs use the first frame), max 12 MB each. Photos are automatically resized for storage and shown in a lightbox.
-- Dashboard with recent memories, stats and dedicated concert diary.
+- Dark navy and gold design inspired by an elegant editorial journal: cinematic featured story, recent photo-led entries, archive-by-year, concert diary and a **dedicated photo gallery**.
+- Works on desktop, tablets and phones, with a redesigned private password screen and entry editor.
 - Edit/delete entries, add more photos, remove individual photos.
 - SQLite database and local photo storage; everything persists on a mounted Railway volume.
 - Mobile-friendly design, password attempt throttling, CSRF protections and protected photo URLs.
+
+## Updating an existing Railway journal (without losing entries)
+
+**If your original Critchell Journal is already online, update the existing project rather than creating a new one.**
+
+1. Keep the **same Railway service**, persistent volume and existing Variables (`DIARY_PASSWORD`, `SESSION_SECRET`, `DATA_DIR=/data`, `COOKIE_SECURE=true`). Do not change your password or secret just for this update.
+2. Back up your existing `/data/journal.sqlite3` database and `/data/uploads/` photos first. Do not delete or detach the `/data` volume.
+3. Unzip this new version and **replace the application files in your existing private GitHub repository** with the files inside the `critchell-journal/` folder. Commit/push the changes to the same branch your Railway service deploys from.
+4. Wait for Railway to deploy the update and show **Success**, then refresh the same website URL. You may need Ctrl+F5 to refresh the stylesheet.
+5. Your original diary entries and uploaded photos should reappear automatically because this version uses **the same database schema and the same storage locations**. No migration or new database is needed.
+
+**Do not upload or commit `/data`, `.env`, passwords, secrets or photo uploads to GitHub.** If Railway was not already using a persistent `/data` volume, correct that before relying on your stored entries. Redeploying to a different service or mounting a new empty volume won't automatically transfer old data.
+
+### What changed in this edition
+
+- Midnight navy backgrounds with warm gold text, decorative imagery and editorial-style typography.
+- Your newest entry becomes the homepage's featured story, with its own photo where available.
+- Four photo-led recent stories, plus a visual empty state when your diary is brand new.
+- Year-based journal archive and quick links to entries, concerts and photographs.
+- **Photos** in the main navigation leads to the new password-protected gallery at `/gallery`.
+- All original functions for adding, editing and deleting stories and uploading/removing photos are kept.
+
+The website ships **without sample diary entries**. The preview screenshots are illustrative only; your own content will appear after you sign in.
 
 ## Deploy to Railway (recommended)
 
@@ -67,7 +91,7 @@ Open `http://127.0.0.1:5000`. Your entries/photos go into the local `data/` dire
 
 ## Editing the design
 
-Colours, layout and responsive styles are in `static/style.css`. Website name can be changed with `SITE_TITLE` without editing code.
+Colours, layout and responsive styles are in `static/style.css`. Decorative background photos are bundled in `static/media/` so they do not depend on external image hosts. Website name can be changed with `SITE_TITLE` without editing code.
 
 ## Run automated checks
 

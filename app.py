@@ -4,6 +4,7 @@ from __future__ import annotations
 import hmac
 import io
 import os
+import re
 import secrets
 import sqlite3
 import threading
@@ -13,6 +14,7 @@ from collections import defaultdict, deque
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
@@ -95,6 +97,7 @@ def initialize_db():
                 category TEXT NOT NULL DEFAULT 'diary',
                 location TEXT NOT NULL DEFAULT '',
                 mood TEXT NOT NULL DEFAULT '',
+                youtube_id TEXT NOT NULL DEFAULT '',
                 body TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -110,6 +113,11 @@ def initialize_db():
             CREATE INDEX IF NOT EXISTS entries_by_date ON entries(entry_date DESC, id DESC);
             CREATE INDEX IF NOT EXISTS photos_by_entry ON photos(entry_id, sort_order, id);
         """)
+        # Existing Railway volumes contain the older entries table. Migrate it in
+        # place; all existing rows, IDs, photos and login settings remain intact.
+        columns = {col[1] for col in db.execute("PRAGMA table_info(entries)")}
+        if "youtube_id" not in columns:
+            db.execute("ALTER TABLE entries ADD COLUMN youtube_id TEXT NOT NULL DEFAULT ''")
 
 
 initialize_db()
@@ -143,10 +151,16 @@ def check_post_csrf():
 def add_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "no-referrer"
+    # Only a video entry needs to share the site's *origin* with YouTube;
+    # journal entry URLs/paths and any query strings remain private.
+    response.headers["Referrer-Policy"] = (
+        "strict-origin-when-cross-origin"
+        if getattr(g, "youtube_embed_page", False) else "no-referrer"
+    )
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; img-src 'self' data:; style-src 'self'; "
         "script-src 'self'; font-src 'self'; connect-src 'self'; "
+        "frame-src https://www.youtube-nocookie.com; "
         "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     )
     response.headers["Cache-Control"] = "private, no-store"
@@ -316,6 +330,63 @@ def gallery():
 
 
 
+YOUTUBE_ID_RE = re.compile(r"[A-Za-z0-9_-]{11}\Z")
+YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com",
+                 "www.youtube-nocookie.com", "youtube-nocookie.com"}
+YOUTU_BE_HOSTS = {"youtu.be", "www.youtu.be"}
+
+
+def parse_youtube_id(value: str) -> str:
+    """Extract only an 11-character video ID from a supported YouTube link.
+
+    Never embed a user-provided URL; build the embed URL from the checked ID.
+    """
+    value = value.strip()
+    if not value:
+        return ""
+    if len(value) > 2048:
+        raise ValueError("That YouTube link is too long.")
+    if value.lower().startswith(("youtube.com/", "www.youtube.com/", "youtu.be/",
+                                 "m.youtube.com/", "music.youtube.com/")):
+        value = "https://" + value
+    try:
+        parsed = urlsplit(value)
+        if (parsed.scheme not in ("https", "http") or parsed.username is not None or
+                parsed.password is not None or parsed.port is not None):
+            raise ValueError
+        host = (parsed.hostname or "").lower()
+        if host in YOUTU_BE_HOSTS:
+            # A short sharing link has exactly one path component.
+            parts = parsed.path.strip("/").split("/")
+            video_id = parts[0] if len(parts) == 1 else ""
+        elif host in YOUTUBE_HOSTS:
+            parts = parsed.path.strip("/").split("/")
+            if parts == ["watch"]:
+                v_values = parse_qs(parsed.query, keep_blank_values=True).get("v", [])
+                video_id = v_values[0] if len(v_values) == 1 else ""
+            elif len(parts) == 2 and parts[0] in ("shorts", "live", "embed"):
+                video_id = parts[1]
+            else:
+                video_id = ""
+        else:
+            video_id = ""
+    except ValueError:
+        video_id = ""
+    if not YOUTUBE_ID_RE.fullmatch(video_id):
+        raise ValueError(
+            "Please enter a valid YouTube video link (watch, share, Shorts or live link)."
+        )
+    return video_id
+
+
+def youtube_watch_url(video_id: str) -> str:
+    return f"https://www.youtube.com/watch?v={video_id}" if video_id else ""
+
+
+def youtube_embed_url(video_id: str) -> str:
+    return f"https://www.youtube-nocookie.com/embed/{video_id}" if video_id else ""
+
+
 def validate_entry(form):
     title = form.get("title", "").strip()
     date = form.get("entry_date", "").strip()
@@ -323,6 +394,7 @@ def validate_entry(form):
     body = form.get("body", "").strip()
     location = form.get("location", "").strip()
     mood = form.get("mood", "").strip()
+    youtube_id = parse_youtube_id(form.get("youtube_url", ""))
     if not title or len(title) > 140:
         raise ValueError("Please add a title (up to 140 characters).")
     try:
@@ -334,7 +406,7 @@ def validate_entry(form):
     if len(location) > 180 or len(mood) > 60 or len(body) > 40000:
         raise ValueError("One of the text fields is too long.")
     return dict(title=title, entry_date=date, category=category,
-                body=body, location=location, mood=mood)
+                body=body, location=location, mood=mood, youtube_id=youtube_id)
 
 
 def _to_rgb(im):
@@ -413,8 +485,8 @@ def new_entry():
             try:
                 with db:
                     cur = db.execute(
-                        "INSERT INTO entries(title,entry_date,category,body,location,mood) "
-                        "VALUES (:title,:entry_date,:category,:body,:location,:mood)", payload)
+                        "INSERT INTO entries(title,entry_date,category,body,location,mood,youtube_id) "
+                        "VALUES (:title,:entry_date,:category,:body,:location,:mood,:youtube_id)", payload)
                     add_photo_rows(db, cur.lastrowid, saved)
                 flash("Your memory has been saved.", "success")
                 return redirect(url_for("entry_detail", entry_id=cur.lastrowid))
@@ -423,12 +495,13 @@ def new_entry():
                 raise
         except ValueError as exc:
             flash(str(exc), "error")
-        return render_template("entry_form.html", entry=request.form, is_edit=False, existing_photos=[])
+        return render_template("entry_form.html", entry=request.form, is_edit=False, existing_photos=[],
+                               youtube_url_value=request.form.get("youtube_url", ""))
     category = request.args.get("category", "diary")
     if category not in CATEGORIES:
         category = "diary"
     return render_template("entry_form.html", entry={"entry_date":local_today(), "category":category},
-                           is_edit=False, existing_photos=[])
+                           is_edit=False, existing_photos=[], youtube_url_value="")
 
 
 @app.get("/entries/<int:entry_id>")
@@ -439,7 +512,11 @@ def entry_detail(entry_id):
     if row is None:
         abort(404)
     entry = hydrate_entries([row])[0]
-    return render_template("entry_detail.html", entry=entry)
+    if entry["youtube_id"]:
+        g.youtube_embed_page = True
+    return render_template("entry_detail.html", entry=entry,
+                           video_embed_url=youtube_embed_url(entry["youtube_id"]),
+                           video_watch_url=youtube_watch_url(entry["youtube_id"]))
 
 
 @app.route("/entries/<int:entry_id>/edit", methods=["GET", "POST"])
@@ -463,7 +540,7 @@ def edit_entry(entry_id):
             try:
                 with db:
                     db.execute("UPDATE entries SET title=:title,entry_date=:entry_date,category=:category,"
-                               "body=:body,location=:location,mood=:mood,updated_at=CURRENT_TIMESTAMP "
+                               "body=:body,location=:location,mood=:mood,youtube_id=:youtube_id,updated_at=CURRENT_TIMESTAMP "
                                "WHERE id=:id", {**payload, "id":entry_id})
                     add_photo_rows(db, entry_id, saved)
                 flash("Your entry has been updated.", "success")
@@ -474,9 +551,11 @@ def edit_entry(entry_id):
         except ValueError as exc:
             flash(str(exc), "error")
         return render_template("entry_form.html", entry=request.form, is_edit=True,
-                               existing_photos=existing_photos, entry_id=entry_id)
+                               existing_photos=existing_photos, entry_id=entry_id,
+                               youtube_url_value=request.form.get("youtube_url", ""))
     return render_template("entry_form.html", entry=row, is_edit=True,
-                           existing_photos=existing_photos, entry_id=entry_id)
+                           existing_photos=existing_photos, entry_id=entry_id,
+                           youtube_url_value=youtube_watch_url(row["youtube_id"]))
 
 
 @app.post("/entries/<int:entry_id>/delete")

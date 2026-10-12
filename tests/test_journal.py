@@ -61,6 +61,52 @@ class JournalTests(unittest.TestCase):
         self.assertEqual(self.client.post("/logout", data={"_csrf": self.token()}).status_code, 302)
         self.assertIn("/login", self.client.get("/").location)
 
+    def test_youtube_links_play_inline_and_can_be_changed(self):
+        self.sign_in()
+        new_form = self.client.get("/entries/new")
+        self.assertIn(b'name="youtube_url"', new_form.data)
+        self.assertNotIn(b"www.youtube-nocookie.com/embed/", new_form.data)
+        created = self.client.post("/entries/new", data={
+            "_csrf": self.token(), "title": "A gig with a video",
+            "entry_date": "2026-10-12", "category": "concert", "body": "Great night!",
+            "youtube_url": "https://youtu.be/dQw4w9WgXcQ?si=example"
+        })
+        self.assertEqual(created.status_code, 302)
+        detail = created.location
+        page = self.client.get(detail)
+        self.assertIn(b"Watch the video", page.data)
+        self.assertIn(b"https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", page.data)
+        self.assertNotIn(b"<iframe", page.data)  # Loaded only after clicking Play
+        self.assertIn(b"frame-src https://www.youtube-nocookie.com", page.headers["Content-Security-Policy"].encode())
+        self.assertEqual(page.headers["Referrer-Policy"], "strict-origin-when-cross-origin")
+        self.assertIn(b"Video", self.client.get("/entries").data)
+        entry_id = int(detail.rstrip("/").split("/")[-1])
+        edit_form = self.client.get(f"/entries/{entry_id}/edit")
+        self.assertIn(b"https://www.youtube.com/watch?v=dQw4w9WgXcQ", edit_form.data)
+        edited = self.client.post(f"/entries/{entry_id}/edit", data={
+            "_csrf": self.token(), "title": "A gig with a video",
+            "entry_date": "2026-10-12", "category": "concert",
+            "youtube_url": "https://www.youtube.com/shorts/jfKfPfyJRdk"
+        })
+        self.assertEqual(edited.status_code, 302)
+        self.assertIn(b"/embed/jfKfPfyJRdk", self.client.get(detail).data)
+        bad = self.client.post(f"/entries/{entry_id}/edit", data={
+            "_csrf": self.token(), "title": "A gig with a video",
+            "entry_date": "2026-10-12", "category": "concert",
+            "youtube_url": "https://www.youtube.com.evil.example/watch?v=jfKfPfyJRdk"
+        })
+        self.assertEqual(bad.status_code, 200)
+        self.assertIn(b"valid YouTube video link", bad.data)
+        self.assertIn(b"/embed/jfKfPfyJRdk", self.client.get(detail).data)
+        cleared = self.client.post(f"/entries/{entry_id}/edit", data={
+            "_csrf": self.token(), "title": "A gig with a video",
+            "entry_date": "2026-10-12", "category": "concert", "youtube_url": ""
+        })
+        self.assertEqual(cleared.status_code, 302)
+        self.assertNotIn(b"Watch the video", self.client.get(detail).data)
+        self.assertEqual(self.client.get(detail).headers["Referrer-Policy"], "no-referrer")
+        self.assertIn("/login", journal.app.test_client().get(detail).location)
+
     def test_write_edit_search_photos_and_delete(self):
         self.sign_in()
         response = self.client.post("/entries/new", data={

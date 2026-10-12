@@ -25,7 +25,7 @@
     <a href="{{url_for('entry_detail',entry_id=entry.id)}}" class="story-card">
       <div class="story-photo {% if not entry.cover %}story-no-photo category-{{entry.category}}{% endif %}">
         {% if entry.cover %}<img loading="lazy" src="{{url_for('serve_photo',photo_id=entry.cover.id,thumb=1)}}" alt="Photo from {{entry.title}}">{% else %}<span class="cover-glyph">{% if entry.category=='concert' %}♫{% elif entry.category=='trip' %}✧{% elif entry.category=='family' %}♡{% else %}✦{% endif %}</span>{% endif %}
-        {% if entry.photos|length > 1 %}<span class="image-count">{{icon('camera',13)}} {{entry.photos|length}}</span>{% endif %}
+        {% if entry.photos|length > 1 %}<span class="image-count">{{icon('camera',13)}} {{entry.photos|length}}</span>{% endif %}{% if entry.youtube_id %}<span class="video-count">▶ Video</span>{% endif %}
       </div>
       <div class="story-information"><span class="story-category">{% if entry.category=='concert' %}{{icon('music',14)}}{% elif entry.category=='trip' %}{{icon('pin',14)}}{% elif entry.category=='family' %}{{icon('heart',14)}}{% else %}{{icon('book',14)}}{% endif %} {{categories[entry.category][0]}}</span><h3>{{entry.title}}</h3><p>{{entry.body[:110] ~ ('…' if entry.body|length > 110 else '') if entry.body else (entry.location or 'A moment to remember.')}}</p><div class="story-foot"><span>{{icon('calendar',13)}} {{entry.entry_date | pretty_date}}</span><span class="story-arrow">{{icon('arrow',16)}}</span></div></div>
     </a>

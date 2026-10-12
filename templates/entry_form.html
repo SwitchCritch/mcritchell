@@ -17,6 +17,11 @@
       <div class="upload-previews" id="upload-previews" aria-live="polite"></div>
       {% if is_edit and existing_photos %}<div class="existing-heading">Already in this entry <span>({{existing_photos|length}})</span></div><div class="existing-photos">{% for photo in existing_photos %}<div class="existing-photo"><img src="{{url_for('serve_photo',photo_id=photo.id,thumb=1)}}" alt="Saved photo" loading="lazy"><button type="submit" form="delete-photo-{{photo.id}}" class="photo-remove" aria-label="Remove this photo" data-confirm="Remove this photo permanently?">{{icon('close',15)}}</button></div>{% endfor %}</div>{% endif %}
     </section>
+    <section class="editor-card editor-video-card"><div class="editor-card-top"><span class="editor-step">03</span><div><h2>Add a YouTube video</h2><p>Let the moments play again, right here in your diary.</p></div></div>
+      <div class="field"><label for="youtube_url">YouTube video link <span class="optional">optional</span></label>
+      <div class="youtube-link-field"><span aria-hidden="true" class="youtube-link-symbol">▶</span><input id="youtube_url" name="youtube_url" type="text" inputmode="url" spellcheck="false" autocomplete="off" placeholder="https://www.youtube.com/watch?v=..." value="{{youtube_url_value}}" maxlength="2048"></div>
+      <p class="field-hint">Paste a YouTube link, including youtu.be, Shorts or live videos. The video will appear on this entry's page; the file stays on YouTube. Leave blank to remove a previous video.</p></div>
+    </section>
     <div class="editor-submit"><a href="{{url_for('entry_detail',entry_id=entry_id) if is_edit else url_for('dashboard')}}" class="btn btn-quiet">Cancel</a><button class="btn btn-dark save-button" type="submit">{{icon('check',18)}} {{'Save changes' if is_edit else 'Save this memory'}}</button></div>
   </div>
   <aside class="editor-aside"><div class="aside-tip"><div class="aside-tip-icon">✳</div><h3>A little reminder</h3><p>The best memories aren't always the biggest events. Sometimes they're the simplest days with the people you love.</p><div class="tip-divider"></div><p class="aside-private">{{icon('lock',16)}} Only you can see what you write here.</p></div></aside>

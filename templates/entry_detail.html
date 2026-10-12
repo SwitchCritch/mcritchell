@@ -5,6 +5,15 @@
 <article class="detail-article"><div class="detail-article-heading"><div class="detail-kicker"><span class="detail-cat">{{categories[entry.category][0]}}</span><span>{{entry.entry_date | pretty_date}}</span></div><h1>{{entry.title}}</h1><div class="detail-meta"><span>{{icon('calendar',17)}} {{entry.entry_date | pretty_date}}</span>{% if entry.location %}<span>{{icon('pin',17)}} {{entry.location}}</span>{% endif %}{% if entry.mood %}<span>{{icon('heart',17)}} {{entry.mood}}</span>{% endif %}</div></div>
 {% if entry.cover %}<button class="detail-cover gallery-item" type="button" data-lightbox-src="{{url_for('serve_photo',photo_id=entry.cover.id)}}" aria-label="View larger photograph"><img src="{{url_for('serve_photo',photo_id=entry.cover.id)}}" alt="Photograph from {{entry.title}}"></button>{% else %}<div class="detail-illustration category-{{entry.category}}"><span>{% if entry.category=='concert' %}♫{% elif entry.category=='trip' %}✈{% elif entry.category=='family' %}♡{% else %}✳{% endif %}</span></div>{% endif %}
 <div class="detail-body"><div class="detail-section-label">THE STORY</div><div class="prose">{{entry.body if entry.body else 'No story written yet. You can add one whenever you like.'}}</div></div>
+{% if entry.youtube_id %}
+<section class="video-section" aria-labelledby="video-section-heading">
+  <div class="video-section-heading"><p class="eyebrow dark">MOMENTS IN MOTION</p><h2 id="video-section-heading">Watch the video</h2><p>Play your YouTube video without leaving your journal.</p></div>
+  <div class="youtube-player" data-youtube-embed="{{video_embed_url}}" data-video-title="{{entry.title}}">
+    <div class="youtube-player-poster"><span class="youtube-player-icon" aria-hidden="true">▶</span><strong>Your YouTube video</strong><span>Press play to load the video from YouTube</span><button type="button" class="btn btn-gold youtube-play" data-load-youtube>▶ &nbsp; Play video</button></div>
+  </div>
+  <p class="youtube-source">If the video cannot be embedded, <a href="{{video_watch_url}}" target="_blank" rel="noopener noreferrer">watch it on YouTube ↗</a>. Videos marked private, age-restricted or with embedding disabled may not play here.</p>
+</section>
+{% endif %}
 {% if entry.photos|length > 1 %}<section class="photo-gallery"><div class="gallery-heading"><div><p class="eyebrow dark">MOMENTS IN PICTURES</p><h2>The photo album</h2></div><span>{{entry.photos|length}} photos</span></div><div class="gallery-grid">{% for photo in entry.photos %}<button type="button" class="gallery-item" data-lightbox-src="{{url_for('serve_photo',photo_id=photo.id)}}" aria-label="Enlarge photo {{loop.index}}"><img loading="lazy" src="{{url_for('serve_photo',photo_id=photo.id,thumb=1)}}" alt="Photo {{loop.index}} from {{entry.title}}"></button>{% endfor %}</div></section>{% endif %}
 </article>
 <div class="end-note"><span>✳</span> Another page in your story.</div>

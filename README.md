@@ -6,6 +6,7 @@ A **private, password-protected diary** for everyday memories, concerts, family 
 
 - First screen is the password login. There is **no public sign-up** and no publicly readable journal page.
 - Dates, titles, categories (Concert / Everyday / Family / Travel / Milestone / Other), locations, moods and rich-length diary text.
+- **NEW — YouTube videos:** paste an optional YouTube link into any diary or concert entry. A responsive video player appears on the entry page when you press Play. Supports normal watch URLs, youtu.be links, Shorts and live video URLs; edit or remove the link at any time.
 - Up to **12 photos per upload** and **60 photos per entry**; JPG, PNG, WEBP and GIF (GIFs use the first frame), max 12 MB each. Photos are automatically resized for storage and shown in a lightbox.
 - Dark navy and gold design inspired by an elegant editorial journal: cinematic featured story, recent photo-led entries, archive-by-year, concert diary and a **dedicated photo gallery**.
 - Works on desktop, tablets and phones, with a redesigned private password screen and entry editor.
@@ -21,9 +22,18 @@ A **private, password-protected diary** for everyday memories, concerts, family 
 2. Back up your existing `/data/journal.sqlite3` database and `/data/uploads/` photos first. Do not delete or detach the `/data` volume.
 3. Unzip this new version and **replace the application files in your existing private GitHub repository** with the files inside the `critchell-journal/` folder. Commit/push the changes to the same branch your Railway service deploys from.
 4. Wait for Railway to deploy the update and show **Success**, then refresh the same website URL. You may need Ctrl+F5 to refresh the stylesheet.
-5. Your original diary entries and uploaded photos should reappear automatically because this version uses **the same database schema and the same storage locations**. No migration or new database is needed.
+5. Your original diary entries and uploaded photos should reappear automatically because this version uses **the same database and the same storage locations**. The server automatically adds one optional `youtube_id` column to the existing database on first startup; all existing posts and photos remain unchanged.
 
 **Do not upload or commit `/data`, `.env`, passwords, secrets or photo uploads to GitHub.** If Railway was not already using a persistent `/data` volume, correct that before relying on your stored entries. Redeploying to a different service or mounting a new empty volume won't automatically transfer old data.
+
+### Add a YouTube video to a diary entry
+
+1. Sign in to your diary and choose **New entry** or open an existing entry and choose **Edit entry**.
+2. Scroll to **03 — Add a YouTube video** and paste your link, for example `https://youtu.be/dQw4w9WgXcQ`.
+3. Save the entry. Open the entry and press **Play video** to start the built-in player.
+4. You can edit or delete the video link later without losing the text or photos in that entry.
+
+Videos are streamed from YouTube rather than uploaded to Railway, so they do not use your persistent photo storage. YouTube must allow embedding for the video to play (private, certain age-restricted or embed-disabled videos may not work). Playback only contacts YouTube **after you press Play**, and YouTube may receive your website's domain and set cookies or process playback data. Keep videos unlisted (rather than public) on YouTube if you do not want them readily searchable; this does **not** make them accessible only through your journal, since anyone with an unlisted link can watch them on YouTube.
 
 ### What changed in this edition
 
@@ -33,6 +43,7 @@ A **private, password-protected diary** for everyday memories, concerts, family 
 - Year-based journal archive and quick links to entries, concerts and photographs.
 - **Photos** in the main navigation leads to the new password-protected gallery at `/gallery`.
 - All original functions for adding, editing and deleting stories and uploading/removing photos are kept.
+- Optional YouTube link on any entry, with playback right on the entry detail page.
 
 The website ships **without sample diary entries**. The preview screenshots are illustrative only; your own content will appear after you sign in.
 
@@ -101,4 +112,4 @@ After installing the dependencies, from the project folder run:
 python -m unittest discover -s tests -v
 ```
 
-The tests use a temporary database and test-only login credentials, and check the protected pages, CSRF validation, entry creation/editing/search/deletion and photo uploads.
+The tests use a temporary database and test-only login credentials, and check the protected pages, CSRF validation, entry creation/editing/search/deletion, video linking, and photo uploads.

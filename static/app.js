@@ -102,3 +102,20 @@ if (lightbox && galleryElements.length) {
     if (e.key === 'ArrowRight') show(currentIndex + 1);
   });
 }
+
+// Load a YouTube iframe only after the owner chooses to play it. This keeps
+// third-party network requests off private diary pages until interaction.
+$$('[data-load-youtube]').forEach(button => button.addEventListener('click', () => {
+  const wrapper = button.closest('[data-youtube-embed]');
+  if (!wrapper || wrapper.querySelector('iframe')) return;
+  const embedUrl = wrapper.dataset.youtubeEmbed;
+  if (!/^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]{11}$/.test(embedUrl)) return;
+  const iframe = document.createElement('iframe');
+  iframe.className = 'youtube-iframe';
+  iframe.src = embedUrl + '?autoplay=1';
+  iframe.title = 'YouTube video — ' + (wrapper.dataset.videoTitle || 'journal entry');
+  iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
+  iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+  iframe.setAttribute('allowfullscreen', '');
+  wrapper.replaceChildren(iframe);
+}));
